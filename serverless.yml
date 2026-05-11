@@ -1,3 +1,7 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: techwin
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: my-app
 service: poll-voting-app
 
 provider:
@@ -59,3 +63,5 @@ resources:
           - AttributeName: id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
+plugins:
+  - serverless-offline

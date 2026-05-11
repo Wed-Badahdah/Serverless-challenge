@@ -1,0 +1,217 @@
+{
+  "C:\\xampp\\htdocs\\Serverless-challenge\\serverless.yml": {
+    "versionFramework": "4.35.1",
+    "servicePath": "C:\\xampp\\htdocs\\Serverless-challenge\\serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "org": "techwin",
+      "app": "my-app",
+      "service": "poll-voting-app",
+      "provider": {
+        "name": "aws",
+        "runtime": "nodejs20.x",
+        "region": "us-east-1",
+        "environment": {
+          "POLLS_TABLE": "poll-voting-app-polls-dev"
+        },
+        "iam": {
+          "role": {
+            "statements": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "dynamodb:PutItem",
+                  "dynamodb:GetItem",
+                  "dynamodb:UpdateItem",
+                  "dynamodb:Query"
+                ],
+                "Resource": {
+                  "Fn::GetAtt": [
+                    "PollsTable",
+                    "Arn"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "stage": "dev",
+        "versionFunctions": true
+      },
+      "functions": {
+        "createPoll": {
+          "handler": "handler.createPoll",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/polls",
+                "method": "post"
+              }
+            }
+          ]
+        },
+        "getPoll": {
+          "handler": "handler.getPoll",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/polls/{id}",
+                "method": "get"
+              }
+            }
+          ]
+        },
+        "submitVote": {
+          "handler": "handler.submitVote",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/polls/{id}/vote",
+                "method": "post"
+              }
+            }
+          ]
+        },
+        "sendResults": {
+          "handler": "handler.sendResults",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/polls/{id}/send",
+                "method": "post"
+              }
+            }
+          ]
+        }
+      },
+      "resources": {
+        "Resources": {
+          "PollsTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "poll-voting-app-polls-dev",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "id",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "id",
+                  "KeyType": "HASH"
+                }
+              ],
+              "BillingMode": "PAY_PER_REQUEST"
+            }
+          }
+        }
+      }
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs20.x",
+      "region": "us-east-1",
+      "environment": {
+        "POLLS_TABLE": "poll-voting-app-polls-dev"
+      },
+      "iam": {
+        "role": {
+          "statements": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:PutItem",
+                "dynamodb:GetItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:Query"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "PollsTable",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "stage": "dev",
+      "versionFunctions": true
+    },
+    "dashboard": {
+      "isEnabledForService": true,
+      "requiredAuthentication": false,
+      "orgFeaturesInUse": {
+        "providers": false,
+        "monitoring": false
+      },
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": "BXYxMjdv3CTnlQMhWG",
+      "serviceProvider": null,
+      "instanceParameters": null
+    },
+    "error": {
+      "message": "Serverless command \"offline\" not found. Run \"serverless help\" for a list of all available commands.",
+      "code": "UNRECOGNIZED_CLI_COMMAND"
+    },
+    "serviceRawFile": "# \"org\" ensures this Service is used with the correct Serverless Framework Access Key.\norg: techwin\n# \"app\" enables Serverless Framework Dashboard features and sharing them with other Services.\napp: my-app\nservice: poll-voting-app\r\n\r\nprovider:\r\n  name: aws\r\n  runtime: nodejs20.x # أحدث نسخة مدعومة\r\n  region: us-east-1\r\n  environment:\r\n    POLLS_TABLE: ${self:service}-polls-${sls:stage}\r\n  iam:\r\n    role:\r\n      statements:\r\n        - Effect: Allow\r\n          Action:\r\n            - dynamodb:PutItem\r\n            - dynamodb:GetItem\r\n            - dynamodb:UpdateItem\r\n            - dynamodb:Query\r\n          Resource: !GetAtt PollsTable.Arn\r\n\r\nfunctions:\r\n  createPoll:\r\n    handler: handler.createPoll\r\n    events:\r\n      - httpApi:\r\n          path: /polls\r\n          method: post\r\n\r\n  getPoll:\r\n    handler: handler.getPoll\r\n    events:\r\n      - httpApi:\r\n          path: /polls/{id}\r\n          method: get\r\n\r\n  submitVote:\r\n    handler: handler.submitVote\r\n    events:\r\n      - httpApi:\r\n          path: /polls/{id}/vote\r\n          method: post\r\n\r\n  sendResults:\r\n    handler: handler.sendResults\r\n    events:\r\n      - httpApi:\r\n          path: /polls/{id}/send\r\n          method: post\r\n\r\nresources:\r\n  Resources:\r\n    PollsTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName: ${self:provider.environment.POLLS_TABLE}\r\n        AttributeDefinitions:\r\n          - AttributeName: id\r\n            AttributeType: S\r\n        KeySchema:\r\n          - AttributeName: id\r\n            KeyType: HASH\r\n        BillingMode: PAY_PER_REQUEST\r\n",
+    "command": [
+      "offline"
+    ],
+    "options": {},
+    "orgId": "b387ccd7-0213-4be7-88e1-df767b30db10",
+    "orgName": "techwin",
+    "userId": "LrgNQQMT6ZngkyHTl2",
+    "userName": "techwin",
+    "serviceProviderAwsAccountId": "659728758683",
+    "serviceProviderAwsCfStackName": "poll-voting-app-dev",
+    "serviceProviderAwsCfStackId": "arn:aws:cloudformation:us-east-1:659728758683:stack/poll-voting-app-dev/75c496f0-4d26-11f1-902e-0affc013449b",
+    "serviceProviderAwsCfStackCreated": "2026-05-11T10:45:00.599Z",
+    "serviceProviderAwsCfStackUpdated": "2026-05-11T11:36:31.429Z",
+    "serviceProviderAwsCfStackStatus": "UPDATE_COMPLETE",
+    "serviceProviderAwsCfStackOutputs": [
+      {
+        "OutputKey": "CreatePollLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:659728758683:function:poll-voting-app-dev-createPoll:2",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-poll-voting-app-dev-CreatePollLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "SubmitVoteLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:659728758683:function:poll-voting-app-dev-submitVote:2",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-poll-voting-app-dev-SubmitVoteLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "GetPollLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:659728758683:function:poll-voting-app-dev-getPoll:2",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-poll-voting-app-dev-GetPollLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "HttpApiId",
+        "OutputValue": "g00hxjyt3k",
+        "Description": "Id of the HTTP API",
+        "ExportName": "sls-poll-voting-app-dev-HttpApiId"
+      },
+      {
+        "OutputKey": "SendResultsLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:659728758683:function:poll-voting-app-dev-sendResults:2",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-poll-voting-app-dev-SendResultsLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "ServerlessDeploymentBucketName",
+        "OutputValue": "serverless-framework-deployments-us-east-1-c18f6ef0-ed15",
+        "ExportName": "sls-poll-voting-app-dev-ServerlessDeploymentBucketName"
+      },
+      {
+        "OutputKey": "HttpApiUrl",
+        "OutputValue": "https://g00hxjyt3k.execute-api.us-east-1.amazonaws.com",
+        "Description": "URL of the HTTP API",
+        "ExportName": "sls-poll-voting-app-dev-HttpApiUrl"
+      }
+    ]
+  }
+}
