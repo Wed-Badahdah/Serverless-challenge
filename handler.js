@@ -1,5 +1,6 @@
+const nodemailer = require("nodemailer");
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, PutCommand, UpdateCommand, GetCommand } = require("@aws-sdk/lib-dynamodb");
+const { DynamoDBDocumentClient, PutCommand, UpdateCommand, GetCommand, ScanCommand } = require("@aws-sdk/lib-dynamodb");
 const crypto = require("crypto");
 
 // إعداد الاتصال بقاعدة بيانات DynamoDB
@@ -122,22 +123,23 @@ exports.getPoll = async (event) => {
 };
 
 // ---------------------------------------------------------
-// 4. دالة إرسال النتائج إلى ClickUp (Send Results)
+// 4. دالة إرسال النتائج عبر الإيميل (Send Results)
 // ---------------------------------------------------------
 exports.sendResults = async (event) => {
   try {
     const pollId = event.pathParameters.id;
     const body = JSON.parse(event.body);
-    const { destinationId } = body; 
+    
+    // نستقبل الإيميل بدلاً من Destination ID
+    const { targetEmail } = body; 
 
-    if (!destinationId) {
+    if (!targetEmail) {
       return { 
         statusCode: 400, 
-        body: JSON.stringify({ message: "يجب توفير معرف الوجهة (Destination ID) الخاص بـ ClickUp" }) 
+        body: JSON.stringify({ message: "يجب توفير البريد الإلكتروني" }) 
       };
     }
 
-    // جلب بيانات التصويت
     const pollData = await dynamoDb.send(
       new GetCommand({
         TableName: process.env.POLLS_TABLE,
@@ -152,42 +154,56 @@ exports.sendResults = async (event) => {
     const poll = pollData.Item;
     const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes, 0);
 
-    // تجهيز الرسالة
-    let messageText = `📊 *نتائج التصويت الخاص بك*\n\n`;
-    messageText += `*السؤال:* ${poll.question}\n`;
-    messageText += `*إجمالي الأصوات:* ${totalVotes}\n\n`;
-    messageText += `*التفاصيل:*\n`;
+    let emailText = `📊 نتائج التصويت الخاص بك\n\n`;
+    emailText += `السؤال: ${poll.question}\n`;
+    emailText += `إجمالي الأصوات: ${totalVotes}\n\n`;
+    emailText += `التفاصيل:\n`;
     poll.options.forEach(opt => {
-      messageText += `- ${opt.name}: ${opt.votes} صوت\n`;
+      emailText += `- ${opt.name}: ${opt.votes} صوت\n`;
     });
 
-    // إرسال الطلب إلى ClickUp API
-    const clickupApiUrl = `https://api.clickup.com/api/v2/view/${destinationId}/comment`;
-    
-    const response = await fetch(clickupApiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': process.env.CLICKUP_API_TOKEN,
-        'Content-Type': 'application/json'
+    // إعداد الاتصال بخادم SMTP (سيسحب البيانات من ملف .env)
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
       },
-      body: JSON.stringify({
-        comment_text: messageText,
-        notify_all: true
-      })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("ClickUp Error Details:", errorData);
-      throw new Error(`خطأ من ClickUp: ${response.statusText}`);
-    }
+    // إرسال الإيميل
+    await transporter.sendMail({
+      from: '"منصة التصويت" <noreply@pollingapp.com>',
+      to: targetEmail,
+      subject: `نتائج التصويت: ${poll.question}`,
+      text: emailText,
+    });
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "تم إرسال النتائج إلى ClickUp بنجاح" }),
+      body: JSON.stringify({ message: "تم إرسال النتائج إلى بريدك بنجاح" }),
     };
   } catch (error) {
-    console.error("Error sending to ClickUp:", error);
+    console.error("Error sending email:", error);
     return { statusCode: 500, body: JSON.stringify({ message: "حدث خطأ أثناء إرسال النتائج" }) };
+  }
+};
+// 5. دالة جلب جميع التصويتات (List Polls)
+exports.listPolls = async () => {
+  try {
+    const result = await dynamoDb.send(
+      new ScanCommand({
+        TableName: process.env.POLLS_TABLE,
+      })
+    );
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(result.Items || []),
+    };
+  } catch (error) {
+    console.error("Error listing polls:", error);
+    return { statusCode: 500, body: JSON.stringify({ message: "حدث خطأ أثناء جلب القائمة" }) };
   }
 };

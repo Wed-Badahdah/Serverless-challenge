@@ -19,6 +19,7 @@ provider:
             - dynamodb:GetItem
             - dynamodb:UpdateItem
             - dynamodb:Query
+            - dynamodb:Scan
           Resource: !GetAtt PollsTable.Arn
 
 functions:
@@ -49,6 +50,13 @@ functions:
       - httpApi:
           path: /polls/{id}/send
           method: post
+
+  listPolls:
+    handler: handler.listPolls
+    events:
+      - httpApi:
+          path: /polls
+          method: get
 
 resources:
   Resources:
