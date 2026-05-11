@@ -1,0 +1,61 @@
+service: poll-voting-app
+
+provider:
+  name: aws
+  runtime: nodejs20.x # أحدث نسخة مدعومة
+  region: us-east-1
+  environment:
+    POLLS_TABLE: ${self:service}-polls-${sls:stage}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+            - dynamodb:Query
+          Resource: !GetAtt PollsTable.Arn
+
+functions:
+  createPoll:
+    handler: handler.createPoll
+    events:
+      - httpApi:
+          path: /polls
+          method: post
+
+  getPoll:
+    handler: handler.getPoll
+    events:
+      - httpApi:
+          path: /polls/{id}
+          method: get
+
+  submitVote:
+    handler: handler.submitVote
+    events:
+      - httpApi:
+          path: /polls/{id}/vote
+          method: post
+
+  sendResults:
+    handler: handler.sendResults
+    events:
+      - httpApi:
+          path: /polls/{id}/send
+          method: post
+
+resources:
+  Resources:
+    PollsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.POLLS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
