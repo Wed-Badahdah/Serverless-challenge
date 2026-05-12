@@ -1,15 +1,37 @@
-# "org" ensures this Service is used with the correct Serverless Framework Access Key.
 org: techwin
-# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+
 app: my-app
+
 service: poll-voting-app
+
+useDotenv: true
 
 provider:
   name: aws
-  runtime: nodejs20.x # أحدث نسخة مدعومة
+  runtime: nodejs20.x
   region: us-east-1
+
+  # CORS FIX
+  httpApi:
+    cors:
+      allowedOrigins:
+        - http://wed-poll-app.s3-website.eu-north-1.amazonaws.com
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+      allowedMethods:
+        - GET
+        - POST
+        - OPTIONS
+      allowCredentials: false
+
   environment:
     POLLS_TABLE: ${self:service}-polls-${sls:stage}
+    SMTP_HOST: ${env:SMTP_HOST}
+    SMTP_PORT: ${env:SMTP_PORT}
+    SMTP_USER: ${env:SMTP_USER}
+    SMTP_PASS: ${env:SMTP_PASS}
+
   iam:
     role:
       statements:
@@ -28,35 +50,35 @@ functions:
     events:
       - httpApi:
           path: /polls
-          method: post
+          method: POST
 
   getPoll:
     handler: handler.getPoll
     events:
       - httpApi:
           path: /polls/{id}
-          method: get
+          method: GET
 
   submitVote:
     handler: handler.submitVote
     events:
       - httpApi:
           path: /polls/{id}/vote
-          method: post
+          method: POST
 
   sendResults:
     handler: handler.sendResults
     events:
       - httpApi:
           path: /polls/{id}/send
-          method: post
+          method: POST
 
   listPolls:
     handler: handler.listPolls
     events:
       - httpApi:
           path: /polls
-          method: get
+          method: GET
 
 resources:
   Resources:
@@ -64,12 +86,16 @@ resources:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${self:provider.environment.POLLS_TABLE}
+
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
+
         KeySchema:
           - AttributeName: id
             KeyType: HASH
+
         BillingMode: PAY_PER_REQUEST
+
 plugins:
   - serverless-offline

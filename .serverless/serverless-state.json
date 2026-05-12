@@ -8,8 +8,29 @@
       "name": "aws",
       "runtime": "nodejs20.x",
       "region": "us-east-1",
+      "httpApi": {
+        "cors": {
+          "allowedOrigins": [
+            "http://wed-poll-app.s3-website.eu-north-1.amazonaws.com"
+          ],
+          "allowedHeaders": [
+            "Content-Type",
+            "Authorization"
+          ],
+          "allowedMethods": [
+            "GET",
+            "POST",
+            "OPTIONS"
+          ],
+          "allowCredentials": false
+        }
+      },
       "environment": {
-        "POLLS_TABLE": "poll-voting-app-polls-dev"
+        "POLLS_TABLE": "poll-voting-app-polls-dev",
+        "SMTP_HOST": "smtp.gmail.com",
+        "SMTP_PORT": "465",
+        "SMTP_USER": "wedbadhdh@gmail.com",
+        "SMTP_PASS": "vpdlqtvdssmirflt"
       },
       "iam": {
         "role": {
@@ -20,7 +41,8 @@
                 "dynamodb:PutItem",
                 "dynamodb:GetItem",
                 "dynamodb:UpdateItem",
-                "dynamodb:Query"
+                "dynamodb:Query",
+                "dynamodb:Scan"
               ],
               "Resource": {
                 "Fn::GetAtt": [
@@ -60,6 +82,12 @@
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
               "LogGroupName": "/aws/lambda/poll-voting-app-dev-sendResults"
+            }
+          },
+          "ListPollsLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/poll-voting-app-dev-listPolls"
             }
           },
           "IamRoleLambdaExecution": {
@@ -148,7 +176,7 @@
             "Properties": {
               "Code": {
                 "S3Bucket": "serverless-framework-deployments-us-east-1-c18f6ef0-ed15",
-                "S3Key": "serverless/poll-voting-app/dev/1778499377972-2026-05-11T11:36:17.972Z/poll-voting-app.zip"
+                "S3Key": "serverless/poll-voting-app/dev/1778577917997-2026-05-12T09:25:17.997Z/poll-voting-app.zip"
               },
               "Handler": "handler.createPoll",
               "Runtime": "nodejs20.x",
@@ -157,7 +185,11 @@
               "Timeout": 6,
               "Environment": {
                 "Variables": {
-                  "POLLS_TABLE": "poll-voting-app-polls-dev"
+                  "POLLS_TABLE": "poll-voting-app-polls-dev",
+                  "SMTP_HOST": "smtp.gmail.com",
+                  "SMTP_PORT": "465",
+                  "SMTP_USER": "wedbadhdh@gmail.com",
+                  "SMTP_PASS": "vpdlqtvdssmirflt"
                 }
               },
               "Role": {
@@ -176,7 +208,7 @@
             "Properties": {
               "Code": {
                 "S3Bucket": "serverless-framework-deployments-us-east-1-c18f6ef0-ed15",
-                "S3Key": "serverless/poll-voting-app/dev/1778499377972-2026-05-11T11:36:17.972Z/poll-voting-app.zip"
+                "S3Key": "serverless/poll-voting-app/dev/1778577917997-2026-05-12T09:25:17.997Z/poll-voting-app.zip"
               },
               "Handler": "handler.getPoll",
               "Runtime": "nodejs20.x",
@@ -185,7 +217,11 @@
               "Timeout": 6,
               "Environment": {
                 "Variables": {
-                  "POLLS_TABLE": "poll-voting-app-polls-dev"
+                  "POLLS_TABLE": "poll-voting-app-polls-dev",
+                  "SMTP_HOST": "smtp.gmail.com",
+                  "SMTP_PORT": "465",
+                  "SMTP_USER": "wedbadhdh@gmail.com",
+                  "SMTP_PASS": "vpdlqtvdssmirflt"
                 }
               },
               "Role": {
@@ -204,7 +240,7 @@
             "Properties": {
               "Code": {
                 "S3Bucket": "serverless-framework-deployments-us-east-1-c18f6ef0-ed15",
-                "S3Key": "serverless/poll-voting-app/dev/1778499377972-2026-05-11T11:36:17.972Z/poll-voting-app.zip"
+                "S3Key": "serverless/poll-voting-app/dev/1778577917997-2026-05-12T09:25:17.997Z/poll-voting-app.zip"
               },
               "Handler": "handler.submitVote",
               "Runtime": "nodejs20.x",
@@ -213,7 +249,11 @@
               "Timeout": 6,
               "Environment": {
                 "Variables": {
-                  "POLLS_TABLE": "poll-voting-app-polls-dev"
+                  "POLLS_TABLE": "poll-voting-app-polls-dev",
+                  "SMTP_HOST": "smtp.gmail.com",
+                  "SMTP_PORT": "465",
+                  "SMTP_USER": "wedbadhdh@gmail.com",
+                  "SMTP_PASS": "vpdlqtvdssmirflt"
                 }
               },
               "Role": {
@@ -232,7 +272,7 @@
             "Properties": {
               "Code": {
                 "S3Bucket": "serverless-framework-deployments-us-east-1-c18f6ef0-ed15",
-                "S3Key": "serverless/poll-voting-app/dev/1778499377972-2026-05-11T11:36:17.972Z/poll-voting-app.zip"
+                "S3Key": "serverless/poll-voting-app/dev/1778577917997-2026-05-12T09:25:17.997Z/poll-voting-app.zip"
               },
               "Handler": "handler.sendResults",
               "Runtime": "nodejs20.x",
@@ -241,7 +281,11 @@
               "Timeout": 6,
               "Environment": {
                 "Variables": {
-                  "POLLS_TABLE": "poll-voting-app-polls-dev"
+                  "POLLS_TABLE": "poll-voting-app-polls-dev",
+                  "SMTP_HOST": "smtp.gmail.com",
+                  "SMTP_PORT": "465",
+                  "SMTP_USER": "wedbadhdh@gmail.com",
+                  "SMTP_PASS": "vpdlqtvdssmirflt"
                 }
               },
               "Role": {
@@ -255,51 +299,107 @@
               "SendResultsLogGroup"
             ]
           },
-          "CreatePollLambdaVersionlJ8Vg0sWAqGCJgGsrKqonjoeWXCHWIUzpVyampZ408": {
+          "ListPollsLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-c18f6ef0-ed15",
+                "S3Key": "serverless/poll-voting-app/dev/1778577917997-2026-05-12T09:25:17.997Z/poll-voting-app.zip"
+              },
+              "Handler": "handler.listPolls",
+              "Runtime": "nodejs20.x",
+              "FunctionName": "poll-voting-app-dev-listPolls",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "POLLS_TABLE": "poll-voting-app-polls-dev",
+                  "SMTP_HOST": "smtp.gmail.com",
+                  "SMTP_PORT": "465",
+                  "SMTP_USER": "wedbadhdh@gmail.com",
+                  "SMTP_PASS": "vpdlqtvdssmirflt"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "ListPollsLogGroup"
+            ]
+          },
+          "CreatePollLambdaVersionPGamvC8qLNCuhHFJlxOnsIS63WpyZeyh6Wrfi2kKpc8": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "CreatePollLambdaFunction"
               },
-              "CodeSha256": "Z4dVP+CdYBi6Y6CUXBfyx3OKFcwNm0lFT9H8PMS4u34="
+              "CodeSha256": "/S3tAQyMJxKGP/e2QB2kZjPP3yLMXckZ3l0rCAHzbZY="
             }
           },
-          "GetPollLambdaVersionfnr4B9A2CGroA09yFdo14DmmXalJG3tDGlYDIHPyQE": {
+          "GetPollLambdaVersion5LXtOSnWD9JTMjNHsgMs7h8xL5Ri5ErCiZPfeTwGc": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "GetPollLambdaFunction"
               },
-              "CodeSha256": "Z4dVP+CdYBi6Y6CUXBfyx3OKFcwNm0lFT9H8PMS4u34="
+              "CodeSha256": "/S3tAQyMJxKGP/e2QB2kZjPP3yLMXckZ3l0rCAHzbZY="
             }
           },
-          "SubmitVoteLambdaVersionR8ikLs0gyYcde8CjZLeF0oOcJDWXtleKZyhqtgrx9s": {
+          "SubmitVoteLambdaVersion8tZsdZY1UkDKmvxhzdRu3NWI5dgHVvESevjSa70iGM4": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "SubmitVoteLambdaFunction"
               },
-              "CodeSha256": "Z4dVP+CdYBi6Y6CUXBfyx3OKFcwNm0lFT9H8PMS4u34="
+              "CodeSha256": "/S3tAQyMJxKGP/e2QB2kZjPP3yLMXckZ3l0rCAHzbZY="
             }
           },
-          "SendResultsLambdaVersionRR2QosMxn6F2wuQ45VNPEWsJkRJWBxvnswIxJmNOM": {
+          "SendResultsLambdaVersion9tMilw2eyYusbqO4sKP0rXhBYvjruxfpVBo6zL49PI": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "SendResultsLambdaFunction"
               },
-              "CodeSha256": "Z4dVP+CdYBi6Y6CUXBfyx3OKFcwNm0lFT9H8PMS4u34="
+              "CodeSha256": "/S3tAQyMJxKGP/e2QB2kZjPP3yLMXckZ3l0rCAHzbZY="
+            }
+          },
+          "ListPollsLambdaVersion4nouwwDMFQYIeXghBydi7W1VLYTbLtlH4yBli3DxUM": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "ListPollsLambdaFunction"
+              },
+              "CodeSha256": "/S3tAQyMJxKGP/e2QB2kZjPP3yLMXckZ3l0rCAHzbZY="
             }
           },
           "HttpApi": {
             "Type": "AWS::ApiGatewayV2::Api",
             "Properties": {
               "Name": "dev-poll-voting-app",
-              "ProtocolType": "HTTP"
+              "ProtocolType": "HTTP",
+              "CorsConfiguration": {
+                "AllowHeaders": [
+                  "Content-Type",
+                  "Authorization"
+                ],
+                "AllowMethods": [
+                  "GET",
+                  "POST",
+                  "OPTIONS"
+                ],
+                "AllowOrigins": [
+                  "http://wed-poll-app.s3-website.eu-north-1.amazonaws.com"
+                ]
+              }
             }
           },
           "HttpApiStage": {
@@ -603,6 +703,78 @@
             },
             "DependsOn": "HttpApiIntegrationSendResults"
           },
+          "ListPollsLambdaPermissionHttpApi": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "ListPollsLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "HttpApi"
+                    },
+                    "/*"
+                  ]
+                ]
+              }
+            }
+          },
+          "HttpApiIntegrationListPolls": {
+            "Type": "AWS::ApiGatewayV2::Integration",
+            "Properties": {
+              "ApiId": {
+                "Ref": "HttpApi"
+              },
+              "IntegrationType": "AWS_PROXY",
+              "IntegrationUri": {
+                "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"ListPollsLambdaPermissionHttpApi\"][\"Properties\"][\"FunctionName\"]"
+              },
+              "PayloadFormatVersion": "2.0",
+              "TimeoutInMillis": 30000
+            }
+          },
+          "HttpApiRouteGetPolls": {
+            "Type": "AWS::ApiGatewayV2::Route",
+            "Properties": {
+              "ApiId": {
+                "Ref": "HttpApi"
+              },
+              "RouteKey": "GET /polls",
+              "Target": {
+                "Fn::Join": [
+                  "/",
+                  [
+                    "integrations",
+                    {
+                      "Ref": "HttpApiIntegrationListPolls"
+                    }
+                  ]
+                ]
+              }
+            },
+            "DependsOn": "HttpApiIntegrationListPolls"
+          },
           "PollsTable": {
             "Type": "AWS::DynamoDB::Table",
             "Properties": {
@@ -633,7 +805,7 @@
           "CreatePollLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "CreatePollLambdaVersionlJ8Vg0sWAqGCJgGsrKqonjoeWXCHWIUzpVyampZ408"
+              "Ref": "CreatePollLambdaVersionPGamvC8qLNCuhHFJlxOnsIS63WpyZeyh6Wrfi2kKpc8"
             },
             "Export": {
               "Name": "sls-poll-voting-app-dev-CreatePollLambdaFunctionQualifiedArn"
@@ -642,7 +814,7 @@
           "GetPollLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "GetPollLambdaVersionfnr4B9A2CGroA09yFdo14DmmXalJG3tDGlYDIHPyQE"
+              "Ref": "GetPollLambdaVersion5LXtOSnWD9JTMjNHsgMs7h8xL5Ri5ErCiZPfeTwGc"
             },
             "Export": {
               "Name": "sls-poll-voting-app-dev-GetPollLambdaFunctionQualifiedArn"
@@ -651,7 +823,7 @@
           "SubmitVoteLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "SubmitVoteLambdaVersionR8ikLs0gyYcde8CjZLeF0oOcJDWXtleKZyhqtgrx9s"
+              "Ref": "SubmitVoteLambdaVersion8tZsdZY1UkDKmvxhzdRu3NWI5dgHVvESevjSa70iGM4"
             },
             "Export": {
               "Name": "sls-poll-voting-app-dev-SubmitVoteLambdaFunctionQualifiedArn"
@@ -660,10 +832,19 @@
           "SendResultsLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "SendResultsLambdaVersionRR2QosMxn6F2wuQ45VNPEWsJkRJWBxvnswIxJmNOM"
+              "Ref": "SendResultsLambdaVersion9tMilw2eyYusbqO4sKP0rXhBYvjruxfpVBo6zL49PI"
             },
             "Export": {
               "Name": "sls-poll-voting-app-dev-SendResultsLambdaFunctionQualifiedArn"
+            }
+          },
+          "ListPollsLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "ListPollsLambdaVersion4nouwwDMFQYIeXghBydi7W1VLYTbLtlH4yBli3DxUM"
+            },
+            "Export": {
+              "Name": "sls-poll-voting-app-dev-ListPollsLambdaFunctionQualifiedArn"
             }
           },
           "HttpApiId": {
@@ -704,6 +885,9 @@
       },
       "vpc": {}
     },
+    "plugins": [
+      "serverless-offline"
+    ],
     "pluginsData": {},
     "functions": {
       "createPoll": {
@@ -712,7 +896,7 @@
           {
             "httpApi": {
               "path": "/polls",
-              "method": "post"
+              "method": "POST"
             },
             "resolvedMethod": "POST",
             "resolvedPath": "/polls"
@@ -724,7 +908,7 @@
         "timeout": 6,
         "runtime": "nodejs20.x",
         "vpc": {},
-        "versionLogicalId": "CreatePollLambdaVersionlJ8Vg0sWAqGCJgGsrKqonjoeWXCHWIUzpVyampZ408"
+        "versionLogicalId": "CreatePollLambdaVersionPGamvC8qLNCuhHFJlxOnsIS63WpyZeyh6Wrfi2kKpc8"
       },
       "getPoll": {
         "handler": "handler.getPoll",
@@ -732,7 +916,7 @@
           {
             "httpApi": {
               "path": "/polls/{id}",
-              "method": "get"
+              "method": "GET"
             },
             "resolvedMethod": "GET",
             "resolvedPath": "/polls/{id}"
@@ -744,7 +928,7 @@
         "timeout": 6,
         "runtime": "nodejs20.x",
         "vpc": {},
-        "versionLogicalId": "GetPollLambdaVersionfnr4B9A2CGroA09yFdo14DmmXalJG3tDGlYDIHPyQE"
+        "versionLogicalId": "GetPollLambdaVersion5LXtOSnWD9JTMjNHsgMs7h8xL5Ri5ErCiZPfeTwGc"
       },
       "submitVote": {
         "handler": "handler.submitVote",
@@ -752,7 +936,7 @@
           {
             "httpApi": {
               "path": "/polls/{id}/vote",
-              "method": "post"
+              "method": "POST"
             },
             "resolvedMethod": "POST",
             "resolvedPath": "/polls/{id}/vote"
@@ -764,7 +948,7 @@
         "timeout": 6,
         "runtime": "nodejs20.x",
         "vpc": {},
-        "versionLogicalId": "SubmitVoteLambdaVersionR8ikLs0gyYcde8CjZLeF0oOcJDWXtleKZyhqtgrx9s"
+        "versionLogicalId": "SubmitVoteLambdaVersion8tZsdZY1UkDKmvxhzdRu3NWI5dgHVvESevjSa70iGM4"
       },
       "sendResults": {
         "handler": "handler.sendResults",
@@ -772,7 +956,7 @@
           {
             "httpApi": {
               "path": "/polls/{id}/send",
-              "method": "post"
+              "method": "POST"
             },
             "resolvedMethod": "POST",
             "resolvedPath": "/polls/{id}/send"
@@ -784,7 +968,27 @@
         "timeout": 6,
         "runtime": "nodejs20.x",
         "vpc": {},
-        "versionLogicalId": "SendResultsLambdaVersionRR2QosMxn6F2wuQ45VNPEWsJkRJWBxvnswIxJmNOM"
+        "versionLogicalId": "SendResultsLambdaVersion9tMilw2eyYusbqO4sKP0rXhBYvjruxfpVBo6zL49PI"
+      },
+      "listPolls": {
+        "handler": "handler.listPolls",
+        "events": [
+          {
+            "httpApi": {
+              "path": "/polls",
+              "method": "GET"
+            },
+            "resolvedMethod": "GET",
+            "resolvedPath": "/polls"
+          }
+        ],
+        "name": "poll-voting-app-dev-listPolls",
+        "package": {},
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "nodejs20.x",
+        "vpc": {},
+        "versionLogicalId": "ListPollsLambdaVersion4nouwwDMFQYIeXghBydi7W1VLYTbLtlH4yBli3DxUM"
       }
     },
     "resources": {
@@ -817,6 +1021,7 @@
       "org": "techwin",
       "app": "my-app",
       "service": "poll-voting-app",
+      "useDotenv": true,
       "provider": {
         "$ref": "$[\"service\"][\"provider\"]"
       },
@@ -825,6 +1030,9 @@
       },
       "resources": {
         "$ref": "$[\"service\"][\"resources\"]"
+      },
+      "plugins": {
+        "$ref": "$[\"service\"][\"plugins\"]"
       }
     },
     "app": "my-app",
@@ -835,7 +1043,7 @@
     "artifact": "C:\\xampp\\htdocs\\Serverless-challenge\\.serverless\\poll-voting-app.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/poll-voting-app/dev/1778499377972-2026-05-11T11:36:17.972Z",
+    "artifactDirectoryName": "serverless/poll-voting-app/dev/1778577917997-2026-05-12T09:25:17.997Z",
     "artifact": "poll-voting-app.zip"
   }
 }

@@ -1,34 +1,63 @@
+// test email deploy
 const nodemailer = require("nodemailer");
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, PutCommand, UpdateCommand, GetCommand, ScanCommand } = require("@aws-sdk/lib-dynamodb");
+const {
+  DynamoDBDocumentClient,
+  PutCommand,
+  UpdateCommand,
+  GetCommand,
+  ScanCommand,
+} = require("@aws-sdk/lib-dynamodb");
+
 const crypto = require("crypto");
 
-// إعداد الاتصال بقاعدة بيانات DynamoDB
+// DynamoDB
 const client = new DynamoDBClient({});
 const dynamoDb = DynamoDBDocumentClient.from(client);
 
-// ---------------------------------------------------------
-// 1. دالة إنشاء التصويت (Create Poll)
-// ---------------------------------------------------------
+// -----------------------------------------------------
+// CORS HEADERS
+// -----------------------------------------------------
+const corsHeaders = {
+  "Access-Control-Allow-Origin":
+    "http://wed-poll-app.s3-website.eu-north-1.amazonaws.com",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+};
+
+// -----------------------------------------------------
+// 1. CREATE POLL
+// -----------------------------------------------------
 exports.createPoll = async (event) => {
   try {
     const body = JSON.parse(event.body);
+
     const { question, options } = body;
 
-    // التحقق من المدخلات
-    if (!question || !options || !Array.isArray(options) || options.length < 2) {
+    if (
+      !question ||
+      !options ||
+      !Array.isArray(options) ||
+      options.length < 2
+    ) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: "يجب توفير سؤال وخيارين على الأقل" }),
+        headers: corsHeaders,
+        body: JSON.stringify({
+          message: "يجب توفير سؤال وخيارين على الأقل",
+        }),
       };
     }
 
     const pollId = crypto.randomUUID();
+
     const newPoll = {
       id: pollId,
-      question: question,
-      // تهيئة الخيارات مع عداد أصوات يبدأ من صفر
-      options: options.map(opt => ({ name: opt, votes: 0 })), 
+      question,
+      options: options.map((opt) => ({
+        name: opt,
+        votes: 0,
+      })),
       createdAt: new Date().toISOString(),
     };
 
@@ -41,6 +70,7 @@ exports.createPoll = async (event) => {
 
     return {
       statusCode: 201,
+      headers: corsHeaders,
       body: JSON.stringify({
         message: "تم إنشاء التصويت بنجاح",
         poll: newPoll,
@@ -48,55 +78,83 @@ exports.createPoll = async (event) => {
     };
   } catch (error) {
     console.error("Error creating poll:", error);
-    return { statusCode: 500, body: JSON.stringify({ message: "حدث خطأ داخلي" }) };
+
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        message: "حدث خطأ داخلي",
+      }),
+    };
   }
 };
 
-// ---------------------------------------------------------
-// 2. دالة تسجيل التصويت (Submit Vote)
-// ---------------------------------------------------------
+// -----------------------------------------------------
+// 2. SUBMIT VOTE
+// -----------------------------------------------------
 exports.submitVote = async (event) => {
   try {
     const pollId = event.pathParameters.id;
+
     const body = JSON.parse(event.body);
+
     const { optionIndex } = body;
 
-    if (optionIndex === undefined || typeof optionIndex !== 'number') {
+    if (
+      optionIndex === undefined ||
+      typeof optionIndex !== "number"
+    ) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: "يجب تحديد رقم الخيار الصحيح" }),
+        headers: corsHeaders,
+        body: JSON.stringify({
+          message: "يجب تحديد رقم الخيار الصحيح",
+        }),
       };
     }
 
-    // تحديث عداد الأصوات للخيار المحدد باستخدام Index
     const result = await dynamoDb.send(
       new UpdateCommand({
         TableName: process.env.POLLS_TABLE,
         Key: { id: pollId },
-        UpdateExpression: `SET options[${optionIndex}].votes = options[${optionIndex}].votes + :inc`,
+
+        UpdateExpression: `
+          SET options[${optionIndex}].votes =
+          options[${optionIndex}].votes + :inc
+        `,
+
         ExpressionAttributeValues: {
           ":inc": 1,
         },
+
         ReturnValues: "ALL_NEW",
       })
     );
 
     return {
       statusCode: 200,
+      headers: corsHeaders,
       body: JSON.stringify({
-        message: "تم تسجيل تصويتك بنجاح",
+        message: "تم تسجيل التصويت",
         poll: result.Attributes,
       }),
     };
   } catch (error) {
     console.error("Error submitting vote:", error);
-    return { statusCode: 500, body: JSON.stringify({ message: "حدث خطأ أثناء تسجيل الصوت" }) };
+
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        message: "حدث خطأ أثناء التصويت",
+      }),
+    };
   }
 };
 
-// ---------------------------------------------------------
-// 3. دالة جلب التصويت والنتائج (Get Poll)
-// ---------------------------------------------------------
+// -----------------------------------------------------
+// 3. GET POLL
+// -----------------------------------------------------
 exports.getPoll = async (event) => {
   try {
     const pollId = event.pathParameters.id;
@@ -109,34 +167,51 @@ exports.getPoll = async (event) => {
     );
 
     if (!result.Item) {
-      return { statusCode: 404, body: JSON.stringify({ message: "التصويت غير موجود" }) };
+      return {
+        statusCode: 404,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          message: "التصويت غير موجود",
+        }),
+      };
     }
 
     return {
       statusCode: 200,
+      headers: corsHeaders,
       body: JSON.stringify(result.Item),
     };
   } catch (error) {
     console.error("Error fetching poll:", error);
-    return { statusCode: 500, body: JSON.stringify({ message: "حدث خطأ أثناء جلب البيانات" }) };
+
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        message: "حدث خطأ أثناء جلب التصويت",
+      }),
+    };
   }
 };
 
-// ---------------------------------------------------------
-// 4. دالة إرسال النتائج عبر الإيميل (Send Results)
-// ---------------------------------------------------------
+// -----------------------------------------------------
+// 4. SEND RESULTS EMAIL
+// -----------------------------------------------------
 exports.sendResults = async (event) => {
   try {
     const pollId = event.pathParameters.id;
+
     const body = JSON.parse(event.body);
-    
-    // نستقبل الإيميل بدلاً من Destination ID
-    const { targetEmail } = body; 
+
+    const { targetEmail } = body;
 
     if (!targetEmail) {
-      return { 
-        statusCode: 400, 
-        body: JSON.stringify({ message: "يجب توفير البريد الإلكتروني" }) 
+      return {
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          message: "يجب توفير البريد الإلكتروني",
+        }),
       };
     }
 
@@ -148,33 +223,43 @@ exports.sendResults = async (event) => {
     );
 
     if (!pollData.Item) {
-      return { statusCode: 404, body: JSON.stringify({ message: "التصويت غير موجود" }) };
+      return {
+        statusCode: 404,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          message: "التصويت غير موجود",
+        }),
+      };
     }
 
     const poll = pollData.Item;
-    const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes, 0);
 
-    let emailText = `📊 نتائج التصويت الخاص بك\n\n`;
+    const totalVotes = poll.options.reduce(
+      (sum, opt) => sum + opt.votes,
+      0
+    );
+
+    let emailText = `📊 نتائج التصويت\n\n`;
+
     emailText += `السؤال: ${poll.question}\n`;
     emailText += `إجمالي الأصوات: ${totalVotes}\n\n`;
-    emailText += `التفاصيل:\n`;
-    poll.options.forEach(opt => {
+
+    poll.options.forEach((opt) => {
       emailText += `- ${opt.name}: ${opt.votes} صوت\n`;
     });
 
-    // إعداد الاتصال بخادم SMTP (سيسحب البيانات من ملف .env)
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
+      secure: true,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
     });
 
-    // إرسال الإيميل
     await transporter.sendMail({
-      from: '"منصة التصويت" <noreply@pollingapp.com>',
+      from: '"نظام التصويت الآلي" <' + process.env.SMTP_USER + '>',
       to: targetEmail,
       subject: `نتائج التصويت: ${poll.question}`,
       text: emailText,
@@ -182,14 +267,27 @@ exports.sendResults = async (event) => {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "تم إرسال النتائج إلى بريدك بنجاح" }),
+      headers: corsHeaders,
+      body: JSON.stringify({
+        message: "تم إرسال النتائج",
+      }),
     };
   } catch (error) {
     console.error("Error sending email:", error);
-    return { statusCode: 500, body: JSON.stringify({ message: "حدث خطأ أثناء إرسال النتائج" }) };
+
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        message: "حدث خطأ أثناء إرسال الإيميل",
+      }),
+    };
   }
 };
-// 5. دالة جلب جميع التصويتات (List Polls)
+
+// -----------------------------------------------------
+// 5. LIST POLLS
+// -----------------------------------------------------
 exports.listPolls = async () => {
   try {
     const result = await dynamoDb.send(
@@ -200,10 +298,18 @@ exports.listPolls = async () => {
 
     return {
       statusCode: 200,
+      headers: corsHeaders,
       body: JSON.stringify(result.Items || []),
     };
   } catch (error) {
     console.error("Error listing polls:", error);
-    return { statusCode: 500, body: JSON.stringify({ message: "حدث خطأ أثناء جلب القائمة" }) };
+
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        message: "حدث خطأ أثناء جلب التصويتات",
+      }),
+    };
   }
 };
